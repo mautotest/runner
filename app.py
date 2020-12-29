@@ -8,7 +8,7 @@
 # @Site:
 # @Time: 12月 21, 2020
 # -----------------------------------------------------
-from flask import Flask
+from flask import Flask,request
 from common.status import s, StatusType
 from job import start_heart, start_work
 from common.result import Result
@@ -28,12 +28,17 @@ def hello_world():
 # 分配任务
 @app.route('/worker', methods=["POST"])
 def work():
-    app.logger.info('get work!')
+    cmd = request.form["cmd"]
+    app.logger.info('get work!========>cmd:{}'.format(cmd))
+    if s.status != StatusType.ONELINE:
+        return Result().bulid_fail()
     s.status = StatusType.PENDING
     date = datetime.datetime.now() + datetime.timedelta(seconds=3)
-    args = []
-    start_work(date, args)
-    return Result({"status": StatusType.PENDING}).bulid_success()
+    args = [cmd,"12345"]
+    from queue import Queue
+    test_queue = Queue()
+    job = start_work(date=date, args=args,test_queue=test_queue)
+    return Result({"status": StatusType.PENDING, "job": job.id}).bulid_success()
 
 
 if __name__ == '__main__':
